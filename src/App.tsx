@@ -1,6 +1,10 @@
 import WorldMap from "./WorldMap";
 
 const App = () => {
-	return <WorldMap />;
+	return (
+		<>
+			<WorldMap />
+		</>
+	);
 };
 export default App;
