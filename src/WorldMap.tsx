@@ -5,9 +5,25 @@ import {
 	TileLayer,
 	WMSTileLayer,
 	Pane,
+	GeoJSON,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import * as L from "leaflet"
 import { NightRegion } from "react-leaflet-night-region";
+import type { Feature, GeoJsonObject, Geometry } from "geojson";
+import atcBoundariesMap from "./data/fir.json"
+
+const geoJSONStyle = () => (
+	{
+		color: "green",
+		fillOpacity: 0,
+		weight: 2,
+	}
+)
+
+const onEachFeature = (feature: Feature<Geometry>, layer: L.Layer) => {
+	feature.properties && layer.bindPopup(feature.properties.name)
+}
 
 const WorldMap = () => {
 	const params = {
@@ -43,6 +59,9 @@ const WorldMap = () => {
 						fillOpacity={0.4}
 						color="#ff000"
 					/>
+				</LayersControl.Overlay>
+				<LayersControl.Overlay name="ATC Boundaries">
+					<GeoJSON data={atcBoundariesMap as GeoJsonObject} style={geoJSONStyle} onEachFeature={onEachFeature}/>
 				</LayersControl.Overlay>
 			</LayersControl>
 			<LayersControl>
