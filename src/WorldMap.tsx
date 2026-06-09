@@ -7,6 +7,7 @@ import {
 	Pane,
 	GeoJSON,
 	Marker,
+	Tooltip,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import * as L from "leaflet"
@@ -110,7 +111,14 @@ const WorldMap = () => {
 				</LayersControl.BaseLayer>
 			</LayersControl>
 			{flights.map((flight) => (
-				<Marker key={flight.hex} position={[flight.lat, flight.lng]} rotationAngle={flight.dir} icon={planeIcon}></Marker>
+				<Marker key={flight.hex} position={[flight.lat, flight.lng]} rotationAngle={flight.dir} icon={planeIcon}>
+					<Tooltip>
+						<p>Flight Number: {flight.airline_icao}{flight.flight_number}</p>
+						<p>Altitide: {Math.round(flight.alt * 3.28084)} ft</p>
+						<p>Direction: {flight.dir}°</p>
+						<p>Speed: {Math.round(flight.speed / 1.852)} knots</p>
+					</Tooltip>
+				</Marker>
 			))}
 		</MapContainer>
 	);
