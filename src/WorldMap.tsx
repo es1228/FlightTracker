@@ -6,12 +6,24 @@ import {
 	WMSTileLayer,
 	Pane,
 	GeoJSON,
+	Marker,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import * as L from "leaflet"
 import { NightRegion } from "react-leaflet-night-region";
 import type { Feature, GeoJsonObject, Geometry } from "geojson";
 import atcBoundariesMap from "./data/fir.json"
+import { useEffect, useState } from "react";
+import { type FlightResponse, type LiveFlight } from "./types/types";
+import "leaflet-rotatedmarker";
+import planeIconUrl from "./assets/plane.png"
+
+const planeIcon = L.icon({
+	iconUrl: planeIconUrl,
+	iconSize: [32, 32],
+	iconAnchor: [16, 16],
+	popupAnchor: [0, -16]
+})
 
 const geoJSONStyle = () => (
 	{
@@ -26,12 +38,23 @@ const onEachFeature = (feature: Feature<Geometry>, layer: L.Layer) => {
 }
 
 const WorldMap = () => {
-	const params = {
-		opacity: 0.7,
-		layers: "Radar_1km_SfcPrecipType",
-		format: "image/png",
-		transparent: true,
-	};
+	const [flights, setFlights] = useState<LiveFlight[]>([]);
+
+	const fetchLiveFlights = async () => {
+		try {
+			const response = await fetch("https://opensky-api-response.onrender.com/api/flights?min_lat=40&max_lat=45&min_lon=-80&max_lon=-75");
+			const data: FlightResponse = await response.json();
+			setFlights(data.flights)
+		}
+		catch (error) {
+			console.error(error);
+		}
+	}
+
+	useEffect(() => {
+		fetchLiveFlights()
+	}, [])
+
 	return (
 		<MapContainer
 			center={[0, 0]}
@@ -43,14 +66,23 @@ const WorldMap = () => {
 				[85, Infinity],
 			]}
 			maxBoundsViscosity={1.0}
+			worldCopyJump
 		>
 			<LayersControl>
 				<LayersControl.Overlay name="Radar">
 					<Pane name="radar-layer" style={{ zIndex: 1000 }}>
-						<WMSTileLayer
-							url="https://geo.weather.gc.ca/geomet?"
-							params={params}
-						/>
+						<LayerGroup>
+							<WMSTileLayer
+								url="https://geo.weather.gc.ca/geomet?"
+								params={{
+									layers: "Radar_1km_SfcPrecipType",
+									format: "image/png",
+									transparent: true,
+								}}
+								opacity={0.7}
+								attribution="© ECCC"
+							/>
+						</LayerGroup>
 					</Pane>
 				</LayersControl.Overlay>
 				<LayersControl.Overlay name="Day/Night">
@@ -77,6 +109,9 @@ const WorldMap = () => {
 					<TileLayer url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png" />
 				</LayersControl.BaseLayer>
 			</LayersControl>
+			{flights.map((flight) => (
+				<Marker key={flight.hex} position={[flight.lat, flight.lng]} rotationAngle={flight.dir} icon={planeIcon}></Marker>
+			))}
 		</MapContainer>
 	);
 };
