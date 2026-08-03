@@ -1,14 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { FlightResponse } from "../types/types";
 
-const useFetchByCallsign = (callsign: string) => {
-	if (!callsign) return;
+const useFetchByCallsign = (callsign: string, triggerCount: number) => {
+	const [flightLat, setFlightLat] = useState<number>();
+	const [flightLon, setFlightLon] = useState<number>();
+	const [lastUpdated, setLastUpdated] = useState<number>();
 
 	useEffect(() => {
-		const fetchCallsign = async (callsign: string) => {
+		const fetchCallsign = async () => {
+			if (!callsign) return;
+
 			try {
 				const response = await fetch(
-					`https://opendata.adsb.fi/api/v2/callsign/${callsign}`,
+					`/api-proxy/api/v2/callsign/${callsign}`,
 				);
 
 				if (!response.ok) return null;
@@ -18,17 +22,19 @@ const useFetchByCallsign = (callsign: string) => {
 				if (data.ac && data.ac.length > 0) {
 					const flight = data.ac[0];
 
-					if (flight.lat && flight.lon)
-						return {
-							lat: flight.lat,
-							lon: flight.lon,
-						};
+					if (flight.lat && flight.lon) {
+						setFlightLat(flight.lat);
+						setFlightLon(flight.lon);
+						setLastUpdated(Date.now());
+					}
 				}
 			} catch {
 				console.error("Failed to fetch callsign");
 			}
 		};
-        fetchCallsign(callsign);
-	}, [callsign]);
+		fetchCallsign();
+	}, [callsign, triggerCount]);
+
+	return { flightLat, flightLon, lastUpdated };
 };
 export default useFetchByCallsign;

@@ -16,8 +16,6 @@ import * as L from "leaflet";
 import { NightRegion } from "react-leaflet-night-region";
 import type { Feature, GeoJsonObject, Geometry } from "geojson";
 import type { LatLngTuple } from "leaflet";
-import atcBoundariesMap from "./data/fir.json";
-import airportLocations from "./data/airports.json";
 import "leaflet-rotatedmarker";
 import planeIconUrl from "./assets/plane.png";
 import useFetchFlights from "./hooks/useFetchFlights";
@@ -26,13 +24,16 @@ import useFetchLocation from "./hooks/useFetchLocation";
 import useSearch from "./hooks/useSearch";
 import Searchbar from "./components/Searchbar";
 import Button from "./components/Button";
+import useFetchByCallsign from "./hooks/useFetchByCallsign";
 
 type MapRecenterProps = {
 	target: LatLngTuple | null;
+	zoom: number;
 };
 
 type MapEventProps = {
 	handleChange: (lat: number, lon: number) => void;
+	onUserInteraction: () => void;
 };
 
 const planeIcon = L.icon({
@@ -52,24 +53,27 @@ const onEachFeature = (feature: Feature<Geometry>, layer: L.Layer) => {
 	feature.properties && layer.bindPopup(feature.properties.name);
 };
 
-const MapRecenter = ({ target }: MapRecenterProps) => {
+const MapRecenter = ({ target, zoom }: MapRecenterProps) => {
 	const map = useMap();
 
 	useEffect(() => {
 		if (target) {
-			map.flyTo(target, 8, {
+			map.flyTo(target, zoom, {
 				duration: 1.5,
 			});
 		}
-	}, [target, map]);
+	}, [target, map, zoom]);
 
 	return null;
 };
 
-const MapEventsListener = ({ handleChange }: MapEventProps) => {
+const MapEventsListener = ({ handleChange, onUserInteraction }: MapEventProps) => {
 	const timerRef = useRef<number | null>(null);
 
 	const map = useMapEvents({
+		dragstart: () => {
+			onUserInteraction();
+		},
 		moveend: () => {
 			if (timerRef.current) clearTimeout(timerRef.current);
 
@@ -89,6 +93,21 @@ const MapEventsListener = ({ handleChange }: MapEventProps) => {
 };
 
 const WorldMap = () => {
+	const [atcBoundaries, setAtcBoundaries] = useState<GeoJsonObject | null>(
+		null,
+	);
+	const [airports, setAirports] = useState<GeoJsonObject | null>(null);
+
+	useEffect(() => {
+		fetch("/data/fir.json")
+			.then((res) => res.json())
+			.then((data: GeoJsonObject) => setAtcBoundaries(data));
+
+		fetch("/data/airports.json")
+			.then((res) => res.json())
+			.then((data: GeoJsonObject) => setAirports(data));
+	}, []);
+
 	const [lat, setLat] = useState(41);
 	const [lon, setLon] = useState(-74);
 
@@ -99,6 +118,22 @@ const WorldMap = () => {
 	const { location, handleLocationClick, fetchLocation } = useFetchLocation();
 	const { items, handleFocus, handleBlur, handleSearch } =
 		useSearch(handleLocationClick);
+
+	const [searchedCallsign, setSearchedCallsign] = useState<string>("");
+	const [triggerCount, setTriggerCount] = useState<number>(0);
+	const { flightLat, flightLon, lastUpdated } = useFetchByCallsign(
+		searchedCallsign,
+		triggerCount,
+	);
+	const [isTrackingLocked, setIsTrackingLocked] = useState<boolean>(false);
+
+	useEffect(() => {
+		if (flightLat && flightLon && isTrackingLocked) {
+			setLat(flightLat);
+			setLon(flightLon);
+			setFlyToTarget([flightLat, flightLon]);
+		}
+	}, [flightLat, flightLon, lastUpdated, isTrackingLocked]);
 
 	useEffect(() => {
 		setLat(location[0]);
@@ -114,6 +149,12 @@ const WorldMap = () => {
 		},
 		[],
 	);
+
+	const handleFlightSubmit = (callsign: string) => {
+		setSearchedCallsign(callsign);
+		setTriggerCount((prev) => prev + 1);
+		setIsTrackingLocked(true);
+	};
 
 	const [timeKey, setTimeKey] = useState(Date.now());
 
@@ -153,7 +194,7 @@ const WorldMap = () => {
 				<NightRegion
 					fillColor="#000"
 					fillOpacity={0.4}
-					color="#ff000"
+					color="#ff0000"
 				/>
 			</LayersControl.Overlay>
 		),
@@ -164,26 +205,28 @@ const WorldMap = () => {
 		() => (
 			<LayersControl.Overlay name="ATC Boundaries">
 				<GeoJSON
-					data={atcBoundariesMap as GeoJsonObject}
+					key={JSON.stringify(atcBoundaries).length}
+					data={atcBoundaries as GeoJsonObject}
 					style={geoJSONStyle}
 					onEachFeature={onEachFeature}
 				/>
 			</LayersControl.Overlay>
 		),
-		[],
+		[atcBoundaries],
 	);
 
 	const airportsLayer = useMemo(
 		() => (
 			<LayersControl.Overlay name="Airports">
 				<GeoJSON
-					data={airportLocations as any}
+					key={JSON.stringify(airports).length}
+					data={airports as any}
 					style={geoJSONStyle}
 					onEachFeature={onEachFeature}
 				/>
 			</LayersControl.Overlay>
 		),
-		[],
+		[airports],
 	);
 
 	return (
@@ -199,19 +242,28 @@ const WorldMap = () => {
 						text="Current"
 					/>
 				</div>
-				<Searchbar
-					handleChange={handleSearch}
-					handleBlur={handleBlur}
-					handleFocus={handleFocus}
-				/>
+				<div className="fixed top-35">
+					<Searchbar
+						placeholder="Enter Location..."
+						handleChange={handleSearch}
+						handleBlur={handleBlur}
+						handleFocus={handleFocus}
+					/>
+				</div>
 				<div className="fixed top-50 left-5 z-50 rounded-3xl bg-neutral-800/40 backdrop-blur-3xl md:w-md">
 					{items}
 				</div>
-				<Searchbar
-					handleChange={handleSearch}
-					handleBlur={handleBlur}
-					handleFocus={handleFocus}
-				/>
+				<div className="fixed bottom-20">
+					<p className="mb-5 ml-5 rounded-3xl bg-neutral-800/40 p-4 text-white backdrop-blur-3xl">
+						Find Flight
+					</p>
+					<Searchbar
+						placeholder="Callsign (Press ENTER)"
+						handleSubmit={handleFlightSubmit}
+						handleBlur={handleBlur}
+						handleFocus={handleFocus}
+					/>
+				</div>
 			</div>
 			<MapContainer
 				center={[lat, lon]}
@@ -225,8 +277,8 @@ const WorldMap = () => {
 				maxBoundsViscosity={1.0}
 				worldCopyJump
 			>
-				<MapRecenter target={flyToTarget} />
-				<MapEventsListener handleChange={handleMapDragChange} />
+				<MapRecenter target={flyToTarget} zoom={15} />
+				<MapEventsListener handleChange={handleMapDragChange} onUserInteraction={() => setIsTrackingLocked(false)}/>
 				<LayersControl>
 					{weatherLayer}
 					{terminatorLayer}

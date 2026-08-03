@@ -18,7 +18,7 @@ const useFetchFlights = (lat: number, lon: number) => {
 
 	useEffect(() => {
 		fetchLiveFlights();
-		const interval = setInterval(fetchLiveFlights, 3000);
+		const interval = setInterval(fetchLiveFlights, 5000);
         return () => clearInterval(interval)
 	}, [lat, lon]);
 	return { flights };
