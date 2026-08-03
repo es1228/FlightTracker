@@ -18,3 +18,7 @@ interface RotatedMarkerProps extends MarkerProps {
   rotationAngle?: number;
   rotationOrigin?: string;
 }
+
+declare module '@ideditor/country-coder' {
+  export function iso1A2Code(latLng: [number, number]): string | undefined;
+}

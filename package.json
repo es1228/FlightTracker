@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ideditor/country-coder": "^5.1.0",
     "@tailwindcss/vite": "^4.3.0",
     "leaflet": "^1.9.4",
     "leaflet-rotatedmarker": "^0.2.0",
@@ -31,7 +32,8 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
-    "prettier-plugin-tailwindcss": "^0.8.0",
+    "prettier": "^3.9.6",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "react-leaflet-night-region": "^1.1.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",

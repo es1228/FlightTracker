@@ -1,28 +1,86 @@
 export type LiveFlight = {
-  hex: string;
-  reg_number: string;
-  flag: string;
-  lat: number;
-  lng: number;
-  alt: number;
-  dir: number;
-  speed: number;
-  v_speed: number;
-  squawk: string;
-  flight_number: string;
-  flight_icao: string;
-  flight_iata: string;
-  dep_icao: string;
-  arr_icao: string;
-  airline_icao: string;
-  aircraft_icao: string;
-  status: string;
-  updated: number;
+  hex: string
+  type: string
+  flight: string
+  r: string
+  t: string
+  desc?: string
+  alt_baro: any
+  alt_geom?: number
+  gs: number
+  ias?: number
+  tas?: number
+  mach?: number
+  track?: number
+  track_rate?: number
+  roll?: number
+  mag_heading?: number
+  true_heading?: number
+  baro_rate?: number
+  geom_rate?: number
+  squawk?: string
+  emergency?: string
+  category: string
+  nav_qnh?: number
+  nav_altitude_mcp?: number
+  lat: number
+  lon: number
+  nic: number
+  rc: number
+  seen_pos: number
+  version?: number
+  nic_baro?: number
+  nac_p: number
+  nac_v?: number
+  sil: number
+  sil_type: string
+  gva?: number
+  sda?: number
+  alert?: number
+  spi?: number
+  mlat: any[]
+  tisb: any[]
+  messages: number
+  seen: number
+  rssi: number
+  dst: number
+  dir: number
+  nav_heading?: number
+  wd?: number
+  ws?: number
 }
 
 export type FlightResponse = {
-  status: string;
-  timestamp: string;
-  count: number;
-  flights: LiveFlight[];
+  ac: LiveFlight[]
+  msg: string
+  now: number
+  total: number
+  ctime: number
+  ptime: number
 }
+
+export type PhotonResponse = {
+    features: Array<{
+        properties: {
+            name: string;
+            country: string;
+            state: string;
+            osm_id: number;
+        };
+        geometry: {
+            coordinates: number[];
+        };
+    }>;
+};
+
+export type PhotonFeature = {
+    properties: {
+        name: string;
+        country: string;
+        state: string;
+        osm_id: number;
+    };
+    geometry: {
+        coordinates: number[];
+    };
+};
