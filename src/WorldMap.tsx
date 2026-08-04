@@ -16,6 +16,7 @@ import type { Feature, GeoJsonObject, Geometry } from "geojson";
 import type { LatLngTuple } from "leaflet";
 import "leaflet-rotatedmarker";
 import planeIconUrl from "./assets/plane.png";
+import airportIconUrl from "./assets/airport.png";
 import useFetchFlights from "./hooks/useFetchFlights";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import useFetchLocation from "./hooks/useFetchLocation";
@@ -30,6 +31,13 @@ import MapEventsListener from "./components/MapEventsListener";
 
 const planeIcon = L.icon({
 	iconUrl: planeIconUrl,
+	iconSize: [32, 32],
+	iconAnchor: [16, 16],
+	popupAnchor: [0, -16],
+});
+
+const airportIcon = L.icon({
+	iconUrl: airportIconUrl,
 	iconSize: [32, 32],
 	iconAnchor: [16, 16],
 	popupAnchor: [0, -16],
@@ -193,6 +201,9 @@ const WorldMap = () => {
 					data={airports as any}
 					style={geoJSONStyle}
 					onEachFeature={onEachFeature}
+					pointToLayer={(feature, latlng) => {
+						return L.marker(latlng, { icon: airportIcon });
+					}}
 				/>
 			</LayersControl.Overlay>
 		),
