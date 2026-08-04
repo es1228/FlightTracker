@@ -201,7 +201,7 @@ const WorldMap = () => {
 					data={airports as any}
 					style={geoJSONStyle}
 					onEachFeature={onEachFeature}
-					pointToLayer={(feature, latlng) => {
+					pointToLayer={(_feature, latlng) => {
 						return L.marker(latlng, { icon: airportIcon });
 					}}
 				/>
