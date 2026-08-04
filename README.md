@@ -24,6 +24,9 @@ Weather: ECCC Weather API
 - Flight Info: Click any flight to get the flight information and lock its position to the center of the map, useful for following flights.
 - Live Updates: Frequent refresh rates (every 3s)
 
+# Demo Video
+https://github.com/user-attachments/assets/2dd5e957-08d2-43c8-9b97-e49be07dbb22
+
 # Contributing
 Feel free to contribute by opening an issue or creating a PR.
 
