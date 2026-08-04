@@ -52,11 +52,13 @@ const WorldMap = () => {
 	const [airports, setAirports] = useState<GeoJsonObject | null>(null);
 
 	useEffect(() => {
-		fetch("/data/fir.json")
+		const baseURL = import.meta.env.BASE_URL;
+
+		fetch(`${baseURL}data/fir.json`)
 			.then((res) => res.json())
 			.then((data: GeoJsonObject) => setAtcBoundaries(data));
 
-		fetch("/data/airports.json")
+		fetch(`${baseURL}data/airports.json`)
 			.then((res) => res.json())
 			.then((data: GeoJsonObject) => setAirports(data));
 	}, []);
@@ -261,14 +263,15 @@ const WorldMap = () => {
 				<LayersControl>
 					<LayersControl.BaseLayer checked name="Satellite">
 						<LayerGroup>
-							<TileLayer url="https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.png" />
+							<TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+							<TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}" />
 						</LayerGroup>
 					</LayersControl.BaseLayer>
 					<LayersControl.BaseLayer name="Light">
-						<TileLayer url="https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png" />
+						<TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
 					</LayersControl.BaseLayer>
 					<LayersControl.BaseLayer name="Dark">
-						<TileLayer url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png" />
+						<TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
 					</LayersControl.BaseLayer>
 					{weatherLayer}
 					{terminatorLayer}

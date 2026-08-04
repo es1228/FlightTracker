@@ -7,7 +7,7 @@ const useFetchFlights = (lat: number, lon: number) => {
 	const fetchLiveFlights = async () => {
 		try {
 			const response = await fetch(
-				`/api-proxy/api/v3/lat/${lat}/lon/${lon}/dist/250`,
+				`https://opendata.adsb.fi/api/v3/lat/${lat}/lon/${lon}/dist/250`,
 			);
 			const data: FlightResponse = await response.json();
 			setFlights(data.ac.filter((flight) => flight.lat !== null));
@@ -18,7 +18,7 @@ const useFetchFlights = (lat: number, lon: number) => {
 
 	useEffect(() => {
 		fetchLiveFlights();
-		const interval = setInterval(fetchLiveFlights, 5000);
+		const interval = setInterval(fetchLiveFlights, 3000);
         return () => clearInterval(interval)
 	}, [lat, lon]);
 	return { flights };

@@ -30,3 +30,10 @@ html, body {
 .leaflet-marker-icon {
     transition: transform 3s linear, ease-in-out !important;
 }
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background: rgba(0, 0, 0, 0.2) !important;
+    backdrop-filter: blur(20px) !important;
+    color: #fff !important;
+    border: none !important;
+}
