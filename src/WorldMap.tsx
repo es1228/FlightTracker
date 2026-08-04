@@ -8,8 +8,6 @@ import {
 	GeoJSON,
 	Marker,
 	Popup,
-	useMapEvents,
-	useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import * as L from "leaflet";
@@ -19,28 +17,16 @@ import type { LatLngTuple } from "leaflet";
 import "leaflet-rotatedmarker";
 import planeIconUrl from "./assets/plane.png";
 import useFetchFlights from "./hooks/useFetchFlights";
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import useFetchLocation from "./hooks/useFetchLocation";
 import useSearch from "./hooks/useSearch";
 import Searchbar from "./components/Searchbar";
 import Button from "./components/Button";
 import useFetchByCallsign from "./hooks/useFetchByCallsign";
 import useFetchRoute from "./hooks/useFetchRoute";
-
-type MapRecenterProps = {
-	target: LatLngTuple | null;
-	zoom: number;
-};
-
-type MapTrackerProps = {
-	target: LatLngTuple | null;
-	isLocked: boolean;
-}
-
-type MapEventProps = {
-	handleChange: (lat: number, lon: number) => void;
-	onUserInteraction: () => void;
-};
+import MapRecenter from "./components/MapRecenter";
+import MapTracker from "./components/MapTracker";
+import MapEventsListener from "./components/MapEventsListener";
 
 const planeIcon = L.icon({
 	iconUrl: planeIconUrl,
@@ -57,58 +43,6 @@ const geoJSONStyle = () => ({
 
 const onEachFeature = (feature: Feature<Geometry>, layer: L.Layer) => {
 	feature.properties && layer.bindPopup(feature.properties.name);
-};
-
-const MapRecenter = ({ target, zoom }: MapRecenterProps) => {
-	const map = useMap();
-
-	useEffect(() => {
-		if (target) {
-			map.setView(target, zoom);
-		}
-	}, [target, map, zoom]);
-
-	return null;
-};
-
-const MapTracker = ({target, isLocked}: MapTrackerProps) => {
-	const map = useMap();
-
-	useEffect(() => {
-		if (target && !isNaN(target[0]) && !isNaN(target[1]) && isLocked) {
-			map.panTo(target);
-		}
-	}, [target, isLocked, map])
-
-	return null;
-}
-
-const MapEventsListener = ({
-	handleChange,
-	onUserInteraction,
-}: MapEventProps) => {
-	const timerRef = useRef<number | null>(null);
-
-	const map = useMapEvents({
-		dragstart: () => {
-			onUserInteraction();
-		},
-		moveend: () => {
-			if (timerRef.current) clearTimeout(timerRef.current);
-
-			timerRef.current = setTimeout(() => {
-				const center = map.getCenter();
-				handleChange(center.lat, center.lng);
-			}, 1000);
-		},
-	});
-
-	useEffect(() => {
-		const center = map.getCenter();
-		handleChange(center.lat, center.lng);
-	}, [map, handleChange]);
-
-	return null;
 };
 
 const WorldMap = () => {
@@ -151,16 +85,15 @@ const WorldMap = () => {
 	const targetAircraftCoords: LatLngTuple | null = useMemo(() => {
 		if (!selectedCallsign) return null;
 
-		const locFlight = flights.find(f => f.flight === selectedCallsign)
+		const locFlight = flights.find((f) => f.flight === selectedCallsign);
 
-		if (locFlight?.lat && locFlight.lon)
-			return [locFlight.lat, locFlight.lon]
+		if (locFlight?.lat && locFlight?.lon)
+			return [locFlight.lat, locFlight.lon];
 
-		if (flightLat && flightLon)
-			return [flightLat, flightLon]
+		if (flightLat && flightLon) return [flightLat, flightLon];
 
-		return null
-	}, [selectedCallsign, flightLat, flightLon, flights]) 
+		return null;
+	}, [selectedCallsign, flightLat, flightLon, flights]);
 
 	useEffect(() => {
 		if (flightLat && flightLon && isTrackingLocked) {
@@ -186,7 +119,7 @@ const WorldMap = () => {
 	);
 
 	const handleFlightSubmit = (callsign: string) => {
-		setSelectedCallsign(callsign.trim().toUpperCase());
+		setSelectedCallsign(callsign);
 		setTriggerCount((prev) => prev + 1);
 		setIsTrackingLocked(true);
 	};
@@ -272,7 +205,10 @@ const WorldMap = () => {
 						Enter Location
 					</p>
 					<Button
-						handleClick={fetchLocation}
+						handleClick={() => {
+							setIsTrackingLocked(false);
+							fetchLocation();
+						}}
 						icon="my_location"
 						text="Current"
 					/>
@@ -282,7 +218,10 @@ const WorldMap = () => {
 						placeholder="Enter Location..."
 						handleChange={handleSearch}
 						handleBlur={handleBlur}
-						handleFocus={handleFocus}
+						handleFocus={() => {
+							setIsTrackingLocked(false);
+							handleFocus();
+						}}
 					/>
 				</div>
 				<div className="fixed top-50 left-5 z-50 rounded-3xl bg-neutral-800/40 backdrop-blur-3xl md:w-md">
@@ -290,7 +229,7 @@ const WorldMap = () => {
 				</div>
 				<div className="fixed bottom-20">
 					<p className="mb-5 ml-5 rounded-3xl bg-neutral-800/40 p-4 text-white backdrop-blur-3xl">
-						Find Flight
+						Track Flight (Click to Lock)
 					</p>
 					<Searchbar
 						placeholder="Callsign (Press ENTER)"
@@ -310,8 +249,11 @@ const WorldMap = () => {
 				maxBoundsViscosity={1.0}
 				worldCopyJump
 			>
-				<MapRecenter target={flyToTarget} zoom={15} />
-				<MapTracker target={targetAircraftCoords} isLocked={isTrackingLocked}/>
+				<MapRecenter target={flyToTarget} />
+				<MapTracker
+					target={targetAircraftCoords}
+					isLocked={isTrackingLocked}
+				/>
 				<MapEventsListener
 					handleChange={handleMapDragChange}
 					onUserInteraction={() => setIsTrackingLocked(false)}
@@ -358,7 +300,7 @@ const WorldMap = () => {
 								},
 							}}
 						>
-							<Popup autoPan={false}>
+							<Popup autoPan={false} autoClose={false}>
 								<p>Flight Number: {flight.flight}</p>
 								<p>
 									Altitude: {Math.round(flight.alt_baro)} ft
