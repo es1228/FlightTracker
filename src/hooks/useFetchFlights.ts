@@ -6,9 +6,8 @@ const useFetchFlights = (lat: number, lon: number) => {
 
 	const fetchLiveFlights = async () => {
 		try {
-			const rawURL = `https://opendata.adsb.fi/api/v3/lat/${lat}/lon/${lon}/dist/250`;
-			const proxyURL = `https://damp-hall-ef9f.evanssidhu.workers.dev/?url=${encodeURIComponent(rawURL)}`;
-			const response = await fetch(proxyURL);
+			const url = `https://api.airplanes.live/v2/point/${lat}/${lon}/250`;
+			const response = await fetch(url);
 			const data: FlightResponse = await response.json();
 			setFlights(data.ac.filter((flight) => flight.lat !== null));
 		} catch (error) {
