@@ -7,7 +7,7 @@ import {
 	Pane,
 	GeoJSON,
 	Marker,
-	Tooltip,
+	Popup,
 	useMapEvents,
 	useMap,
 } from "react-leaflet";
@@ -25,11 +25,17 @@ import useSearch from "./hooks/useSearch";
 import Searchbar from "./components/Searchbar";
 import Button from "./components/Button";
 import useFetchByCallsign from "./hooks/useFetchByCallsign";
+import useFetchRoute from "./hooks/useFetchRoute";
 
 type MapRecenterProps = {
 	target: LatLngTuple | null;
 	zoom: number;
 };
+
+type MapTrackerProps = {
+	target: LatLngTuple | null;
+	isLocked: boolean;
+}
 
 type MapEventProps = {
 	handleChange: (lat: number, lon: number) => void;
@@ -58,16 +64,29 @@ const MapRecenter = ({ target, zoom }: MapRecenterProps) => {
 
 	useEffect(() => {
 		if (target) {
-			map.flyTo(target, zoom, {
-				duration: 1.5,
-			});
+			map.setView(target, zoom);
 		}
 	}, [target, map, zoom]);
 
 	return null;
 };
 
-const MapEventsListener = ({ handleChange, onUserInteraction }: MapEventProps) => {
+const MapTracker = ({target, isLocked}: MapTrackerProps) => {
+	const map = useMap();
+
+	useEffect(() => {
+		if (target && !isNaN(target[0]) && !isNaN(target[1]) && isLocked) {
+			map.panTo(target);
+		}
+	}, [target, isLocked, map])
+
+	return null;
+}
+
+const MapEventsListener = ({
+	handleChange,
+	onUserInteraction,
+}: MapEventProps) => {
 	const timerRef = useRef<number | null>(null);
 
 	const map = useMapEvents({
@@ -108,8 +127,8 @@ const WorldMap = () => {
 			.then((data: GeoJsonObject) => setAirports(data));
 	}, []);
 
-	const [lat, setLat] = useState(41);
-	const [lon, setLon] = useState(-74);
+	const [lat, setLat] = useState(40.6455112407957);
+	const [lon, setLon] = useState(-73.7864112854004);
 
 	const [flyToTarget, setFlyToTarget] = useState<LatLngTuple | null>(null);
 
@@ -119,13 +138,29 @@ const WorldMap = () => {
 	const { items, handleFocus, handleBlur, handleSearch } =
 		useSearch(handleLocationClick);
 
-	const [searchedCallsign, setSearchedCallsign] = useState<string>("");
+	const [selectedCallsign, setSelectedCallsign] = useState<string>("");
+	const [isTrackingLocked, setIsTrackingLocked] = useState<boolean>(false);
 	const [triggerCount, setTriggerCount] = useState<number>(0);
 	const { flightLat, flightLon, lastUpdated } = useFetchByCallsign(
-		searchedCallsign,
+		selectedCallsign,
 		triggerCount,
 	);
-	const [isTrackingLocked, setIsTrackingLocked] = useState<boolean>(false);
+
+	const { dep, arr } = useFetchRoute(selectedCallsign);
+
+	const targetAircraftCoords: LatLngTuple | null = useMemo(() => {
+		if (!selectedCallsign) return null;
+
+		const locFlight = flights.find(f => f.flight === selectedCallsign)
+
+		if (locFlight?.lat && locFlight.lon)
+			return [locFlight.lat, locFlight.lon]
+
+		if (flightLat && flightLon)
+			return [flightLat, flightLon]
+
+		return null
+	}, [selectedCallsign, flightLat, flightLon, flights]) 
 
 	useEffect(() => {
 		if (flightLat && flightLon && isTrackingLocked) {
@@ -151,7 +186,7 @@ const WorldMap = () => {
 	);
 
 	const handleFlightSubmit = (callsign: string) => {
-		setSearchedCallsign(callsign);
+		setSelectedCallsign(callsign.trim().toUpperCase());
 		setTriggerCount((prev) => prev + 1);
 		setIsTrackingLocked(true);
 	};
@@ -260,8 +295,6 @@ const WorldMap = () => {
 					<Searchbar
 						placeholder="Callsign (Press ENTER)"
 						handleSubmit={handleFlightSubmit}
-						handleBlur={handleBlur}
-						handleFocus={handleFocus}
 					/>
 				</div>
 			</div>
@@ -278,13 +311,11 @@ const WorldMap = () => {
 				worldCopyJump
 			>
 				<MapRecenter target={flyToTarget} zoom={15} />
-				<MapEventsListener handleChange={handleMapDragChange} onUserInteraction={() => setIsTrackingLocked(false)}/>
-				<LayersControl>
-					{weatherLayer}
-					{terminatorLayer}
-					{atcLayer}
-					{airportsLayer}
-				</LayersControl>
+				<MapTracker target={targetAircraftCoords} isLocked={isTrackingLocked}/>
+				<MapEventsListener
+					handleChange={handleMapDragChange}
+					onUserInteraction={() => setIsTrackingLocked(false)}
+				/>
 				<LayersControl>
 					<LayersControl.BaseLayer checked name="Satellite">
 						<LayerGroup>
@@ -297,6 +328,10 @@ const WorldMap = () => {
 					<LayersControl.BaseLayer name="Dark">
 						<TileLayer url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png" />
 					</LayersControl.BaseLayer>
+					{weatherLayer}
+					{terminatorLayer}
+					{atcLayer}
+					{airportsLayer}
 				</LayersControl>
 				{flights
 					.filter((flight) => !flight?.category?.startsWith("c"))
@@ -316,14 +351,20 @@ const WorldMap = () => {
 									marker.setRotationOrigin("center center");
 								}
 							}}
+							eventHandlers={{
+								click: () => {
+									setSelectedCallsign(flight.flight);
+									setIsTrackingLocked(true);
+								},
+							}}
 						>
-							<Tooltip>
+							<Popup autoPan={false}>
 								<p>Flight Number: {flight.flight}</p>
 								<p>
-									Altitide: {Math.round(flight.alt_baro)} ft
+									Altitude: {Math.round(flight.alt_baro)} ft
 								</p>
 								<p>
-									Direction:{" "}
+									Heading:{" "}
 									{Math.round(
 										flight.track ??
 											flight.true_heading ??
@@ -334,7 +375,10 @@ const WorldMap = () => {
 								</p>
 								<p>Speed: {Math.round(flight.gs)} knots</p>
 								<p>Type: {flight.t}</p>
-							</Tooltip>
+								<p>
+									Route: {dep}-{arr}
+								</p>
+							</Popup>
 						</Marker>
 					))}
 			</MapContainer>

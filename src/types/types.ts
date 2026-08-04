@@ -84,3 +84,53 @@ export type PhotonFeature = {
         coordinates: number[];
     };
 };
+
+export type ADSBDBRoot = {
+  response: ADSBDBResponse
+}
+
+export type ADSBDBResponse = {
+  flightroute: Flightroute
+}
+
+export type Flightroute = {
+  callsign: string
+  callsign_icao: string
+  callsign_iata: string
+  airline: Airline
+  origin: Origin
+  destination: Destination
+}
+
+export type Airline = {
+  name: string
+  icao: string
+  iata: string
+  country: string
+  country_iso: string
+  callsign: string
+}
+
+export type Origin = {
+  country_iso_name: string
+  country_name: string
+  elevation: number
+  iata_code: string
+  icao_code: string
+  latitude: number
+  longitude: number
+  municipality: string
+  name: string
+}
+
+export type Destination = {
+  country_iso_name: string
+  country_name: string
+  elevation: number
+  iata_code: string
+  icao_code: string
+  latitude: number
+  longitude: number
+  municipality: string
+  name: string
+}

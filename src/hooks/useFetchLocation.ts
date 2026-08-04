@@ -2,7 +2,9 @@ import { useState } from "react";
 import { type LatLngTuple } from "leaflet";
 
 const useFetchLocation = () => {
-    const [location, setLocation] = useState<LatLngTuple>([40.73, -73.94]);
+    const [location, setLocation] = useState<LatLngTuple>([40.6455112407957, -73.7864112854004]);
+
+
 
     const fetchLocation = () => {
         const options = {

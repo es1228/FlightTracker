@@ -3,8 +3,8 @@ import { useState, type ChangeEvent, type FocusEvent } from "react";
 type SearchbarProps = {
     placeholder: string;
 	handleChange?: (e: ChangeEvent<HTMLInputElement>) => void;
-	handleFocus: (e: FocusEvent<HTMLInputElement>) => void;
-	handleBlur: () => void;
+	handleFocus?: (e: FocusEvent<HTMLInputElement>) => void;
+	handleBlur?: () => void;
 	handleSubmit?: (data: string) => void;
 };
 
