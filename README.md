@@ -3,7 +3,7 @@ A simple and minimal flight tracking map.
 https://es1228.github.io/FlightTracker/ 
 
 # Motivation
-I've always found live flight tracking sites such as FlightRadar24 interesting, and thought it would be interesting to build my own minimal version of these sites using purely free community data.
+I've always found live flight tracking sites such as FlightRadar24 interesting, and thought it would be a fun idea to build my own minimal ad-free version of these sites using purely free community data.
 
 # Images
 <img width="1918" height="910" alt="image" src="https://github.com/user-attachments/assets/a02f666e-7be7-4a26-94d7-9f893e4432d8" />
