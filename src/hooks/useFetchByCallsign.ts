@@ -12,7 +12,7 @@ const useFetchByCallsign = (callsign: string, triggerCount: number) => {
 
 			try {
 				const response = await fetch(
-					`/api-proxy/api/v2/callsign/${callsign}`,
+					`https://api.airplanes.live/v2/callsign/${callsign}`,
 				);
 
 				if (!response.ok) return null;
